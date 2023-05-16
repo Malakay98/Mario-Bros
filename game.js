@@ -18,25 +18,31 @@ const ENEMY_SPEED = 20
 
 let isJumping = true
 
-loadRoot('https://i.imgur.com/')
-loadSprite('coin', 'wbKxhcd.png')
-loadSprite('evil-shroom', 'KPO3fR9.png')
-loadSprite('brick', 'pogC9x5.png')
-loadSprite('block', 'M6rwarW.png')
-loadSprite('mario', 'Wb1qfhK.png')
-loadSprite('mushroom', '0wMd92p.png')
-loadSprite('surprise', 'gesQ1KP.png')
-loadSprite('unboxed', 'bdrLpi6.png')
-loadSprite('pipe-top-left', 'ReTPiWY.png')
-loadSprite('pipe-top-right', 'hj2GK4n.png')
-loadSprite('pipe-bottom-left', 'c1cYSbt.png')
-loadSprite('pipe-bottom-right', 'nqQ79eI.png')
+loadRoot('images/')
+loadSprite('coin', 'coin.png');
+loadSprite('evil-shroom', 'evil-shroom.png');
+loadSprite('brick', 'brick.png');
+loadSprite('block', 'block.png');
+loadSprite('mario', 'mario.png');
+loadSprite('marioLose', 'mario-lose.png', {
+  sliceX: 3,
+  anims: {
+    lose: { from: 0, to: 2 },
+  },
 
-loadSprite('blue-block', 'fVscIbn.png')
-loadSprite('blue-brick', '3e5YRQd.png')
-loadSprite('blue-steel', 'gqVoI2b.png')
-loadSprite('blue-evil-shroom', 'SvV4ueD.png')
-loadSprite('blue-surprise', 'RMqCc1G.png')
+});
+loadSprite('mushroom', 'mushroom.png');
+loadSprite('surprise', 'surprise.png');
+loadSprite('unboxed', 'unboxed.png');
+loadSprite('pipe-top-left', 'pipe-top-left.png');
+loadSprite('pipe-top-right', 'pipe-top-right.png');
+loadSprite('pipe-bottom-left', 'pipe-bottom-left.png');
+loadSprite('pipe-bottom-right', 'pipe-bottom-right.png');
+loadSprite('blue-block', 'blue-rock.png');
+loadSprite('blue-brick', 'blue-brick.png');
+loadSprite('blue-steel', 'blue-steel.png');
+loadSprite('blue-evil-shroom', 'blue-evil-shroom.png');
+loadSprite('blue-surprise', 'blue-surprise.png');
 
 
 
@@ -45,16 +51,16 @@ scene("game", ({ level, score }) => {
 
   const maps = [
     [
-      '                                      ',
-      '                                      ',
-      '                                      ',
-      '                                      ',
-      '                                      ',
-      '     %   =*=%=                        ',
-      '                                      ',
-      '                            -+        ',
-      '                    ^   ^   ()        ',
-      '==============================   =====',
+      '                              =',
+      '                              =',
+      '                              =',
+      '                              =',
+      '                              =',
+      '     %   =*=%=                =',
+      '                              =',
+      '                            -+=',
+      '                    ^   ^   ()=',
+      '===============================',
     ],
     [
       '£                                       £',
@@ -103,8 +109,8 @@ scene("game", ({ level, score }) => {
     }
   ])
 
-  add([text('level ' + parseInt(level + 1) ), pos(40, 6)])
-  
+  add([text('level ' + parseInt(level + 1)), pos(40, 6)])
+
   function big() {
     let timer = 0
     let isBig = false
@@ -130,7 +136,7 @@ scene("game", ({ level, score }) => {
       biggify(time) {
         this.scale = vec2(2)
         timer = time
-        isBig = true     
+        isBig = true
       }
     }
   }
@@ -151,12 +157,12 @@ scene("game", ({ level, score }) => {
     if (obj.is('coin-surprise')) {
       gameLevel.spawn('$', obj.gridPos.sub(0, 1))
       destroy(obj)
-      gameLevel.spawn('}', obj.gridPos.sub(0,0))
+      gameLevel.spawn('}', obj.gridPos.sub(0, 0))
     }
     if (obj.is('mushroom-surprise')) {
       gameLevel.spawn('#', obj.gridPos.sub(0, 1))
       destroy(obj)
-      gameLevel.spawn('}', obj.gridPos.sub(0,0))
+      gameLevel.spawn('}', obj.gridPos.sub(0, 0))
     }
   })
 
@@ -179,19 +185,25 @@ scene("game", ({ level, score }) => {
     if (isJumping) {
       destroy(d)
     } else {
-      go('lose', { score: scoreLabel.value})
+      player.changeSprite('marioLose');
+      player.play('lose');
+      player.collides('dangerous', () => { });
+      player.jump(-BIG_JUMP_FORCE);
+      wait(0.5, () => {
+        go('lose', { score: scoreLabel.value });
+      });
     }
-  })
+  });
 
   player.action(() => {
     camPos(player.pos)
     if (player.pos.y >= FALL_DEATH) {
-      go('lose', { score: scoreLabel.value})
+      go('lose', { score: scoreLabel.value })
     }
   })
 
   player.collides('pipe', () => {
-    keyPress('down', () => {
+    keyPress('s', () => {
       go('game', {
         level: (level + 1) % maps.length,
         score: scoreLabel.value
@@ -199,16 +211,16 @@ scene("game", ({ level, score }) => {
     })
   })
 
-  keyDown('left', () => {
+  keyDown('a', () => {
     player.move(-MOVE_SPEED, 0)
   })
 
-  keyDown('right', () => {
+  keyDown('d', () => {
     player.move(MOVE_SPEED, 0)
   })
 
   player.action(() => {
-    if(player.grounded()) {
+    if (player.grounded()) {
       isJumping = false
     }
   })
@@ -222,7 +234,15 @@ scene("game", ({ level, score }) => {
 })
 
 scene('lose', ({ score }) => {
-  add([text(score, 32), origin('center'), pos(width()/2, height()/ 2)])
+  add([text(score, 32), origin('center'), pos(width() / 2, height() / 2)]);
+  add([
+    text('Press SPACE to Restart', 12),
+    origin('center'),
+    pos(width() / 2, height() / 2 + 50),
+  ]);
+  keyPress('space', () => {
+    go('game', { level: 0, score: 0 });
+  });
 })
 
-start("game", { level: 0, score: 0})
+start("game", { level: 0, score: 0 })
